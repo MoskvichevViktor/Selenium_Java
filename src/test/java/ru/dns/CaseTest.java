@@ -2,9 +2,24 @@ package ru.dns;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.*;
-import org.openqa.selenium.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import ru.yandex.qatools.ashot.AShot;
+import ru.yandex.qatools.ashot.Screenshot;
+import ru.yandex.qatools.ashot.shooting.ShootingStrategies;
+
+import javax.imageio.ImageIO;
+import java.io.File;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,14 +37,15 @@ public class CaseTest {
     // Чтение передаваемого параметра pageLoadStrategy (-DpageLoadStrategy)
     String pls = System.getProperty("pageLoadStrategy", "normal");
 
+    // Счетчик для нумерации скринов
+    private int count = 1;
+
     @BeforeEach
     public void setUp() throws Exception {
         logger.info("env = " + env);
         logger.info("pls = " + pls);
         driver = WebDriverFactory.getDriver(env.toLowerCase(), pls.toLowerCase(Locale.ROOT));
         logger.info("Драйвер стартовал!");
-        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(30));
-        driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(30));
     }
 
     @AfterEach
@@ -41,9 +57,15 @@ public class CaseTest {
     }
 
     @Test
-    public void firsCase() {
+    public void firstCase() {
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
         // Открываем страницу DNS
         driver.get("https://www.dns-shop.ru/");
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[@class='footer__main']")));
+        makeScreenshotFullPage();
 
         // Выводим в логи заголовок
         logger.info("Заголовок страницы - " + driver.getTitle());
@@ -55,38 +77,58 @@ public class CaseTest {
         logger.info("Размеры окна браузера - " + driver.manage().window().getSize());
 
         // Убираем всплывающее окно
-        driver.findElement(By.xpath("//span[text()=\"Всё верно\"]/parent::button")).click();
+        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[text()=\"Всё верно\"]/parent::button")));
+        WebElement buttonAssept = driver.findElement(By.xpath("//span[text()=\"Всё верно\"]/parent::button"));
+        buttonAssept.click();
 
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        // Проверка загрузки страницы (проверка наличия элемента страницы в DOM)
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[@class='footer__main']")));
+        // Делаем скриншот
+        makeScreenshotFullPage();
+
+        // Обновляем страницу
+        driver.navigate().refresh();
 
         // Переходим по ссылке Бытовая техника
-        WebElement technique = driver.findElement(By.xpath("//a[text()='Бытовая техника']"));
-        technique.click();
+        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//a[text()='Бытовая техника']")));
+        WebElement linkTechnique = driver.findElement(By.xpath("//a[text()='Бытовая техника']"));
+        linkTechnique.click();
+
+        // Проверка загрузки страницы (проверка наличия элемента страницы в DOM)
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[@class='footer__main']")));
+        // Делаем скриншот
+        makeScreenshotFullPage();
 
         // Проверка на отображения текста Бытовая техника
-        WebElement textTechnique = driver.findElement(By.xpath("//h1[@class='subcategory__page-title']"));
-        Assertions.assertEquals("Бытовая техника", textTechnique.getText(), "Текст Бытовая техника не отображается.");
+        wait.until(ExpectedConditions.visibilityOf(driver.findElement(By.xpath("//h1[@class='subcategory__page-title']"))));
+        WebElement textBoxTechnique = driver.findElement(By.xpath("//h1[@class='subcategory__page-title']"));
+        Assertions.assertEquals("Бытовая техника", textBoxTechnique.getText(), "Текст Бытовая техника не отображается.");
         logger.info("Проверка на отображения текста Бытовая техника - пройдена!");
 
         // Переходим по ссылке Техника для кухни (kitchenAppliances)
-        WebElement kitchenAppliances = driver.findElement(By.xpath("//span[text() = 'Техника для кухни']"));
-        kitchenAppliances.click();
+        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[text() = 'Техника для кухни']")));
+        WebElement linkKitchenAppliances = driver.findElement(By.xpath("//span[text() = 'Техника для кухни']"));
+        linkKitchenAppliances.click();
+
+        // Проверка загрузки страницы (проверка наличия элемента страницы в DOM)
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[@class='footer__main']")));
+        // Делаем скриншот
+        makeScreenshotFullPage();
 
         // Проверка на отображения текста Техника для кухни
-        WebElement textKitchenAppliances = driver.findElement(By.xpath("//h1[@class='subcategory__page-title']"));
-        Assertions.assertEquals("Техника для кухни", textKitchenAppliances.getText(), "Текст Техника для кухни не отображается.");
+        wait.until(ExpectedConditions.visibilityOf(driver.findElement(By.xpath("//h1[@class='subcategory__page-title']"))));
+        WebElement textBoxKitchenAppliances = driver.findElement(By.xpath("//h1[@class='subcategory__page-title']"));
+        Assertions.assertEquals("Техника для кухни", textBoxKitchenAppliances.getText(), "Текст Техника для кухни не отображается.");
         logger.info("Проверка на отображения текста Техника для кухни - пройдена!");
 
         // Проверка на отображения ссылки Собрать свою кухню
-        WebElement makeKitchen = driver.findElement(By.xpath("//a[text() = 'Собрать свою кухню']"));
-        Assertions.assertEquals("Собрать свою кухню", makeKitchen.getText(), "Ссылка Собрать свою кухню не отображается.");
+        wait.until(ExpectedConditions.visibilityOf(driver.findElement(By.xpath("//a[text() = 'Собрать свою кухню']"))));
+        WebElement linkMakeKitchen = driver.findElement(By.xpath("//a[text() = 'Собрать свою кухню']"));
+        Assertions.assertEquals("Собрать свою кухню", linkMakeKitchen.getText(), "Ссылка Собрать свою кухню не отображается.");
         logger.info("Проверка на отображения ссылки Собрать свою кухню - пройдена!");
 
         // Выводим в логи названия всех категорий раздела Техника для кухни
+        wait.until(ExpectedConditions.visibilityOfAllElements(driver.findElements(By.xpath("//span[@class='subcategory__title']"))));
         List<WebElement> kitchenAppliancesCategories = driver.findElements(By.xpath("//span[@class='subcategory__title']"));
         for (WebElement element : kitchenAppliancesCategories) {
             logger.info("Техника для кухни - " + element.getText());
@@ -95,31 +137,48 @@ public class CaseTest {
         // Проверка, что количество категорий раздела Техника для кухни больше пяти
         Assertions.assertTrue(kitchenAppliancesCategories.size() > 5, "Количество категорий меньше или равно пяти");
         logger.info("Проверка на количество категорий раздела Техника для кухни  - пройдена!");
-
     }
 
     @Test
     public void secondCase() {
 
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
         // Открываем страницу DNS
         driver.get("https://www.dns-shop.ru/");
 
-        // Убираем всплывающее окно
-        driver.findElement(By.xpath("//span[text()=\"Всё верно\"]/parent::button")).click();
+        // Проверка загрузки страницы (проверка наличия элемента страницы в DOM)
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[@class='footer__main']")));
+        // Делаем скриншот
+        makeScreenshotFullPage();
 
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        // Убираем всплывающее окно
+        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[text()=\"Всё верно\"]/parent::button")));
+        WebElement buttonAssept = driver.findElement(By.xpath("//span[text()=\"Всё верно\"]/parent::button"));
+        buttonAssept.click();
+
+        // Проверка загрузки страницы (проверка наличия элемента страницы в DOM)
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[@class='footer__main']")));
+        // Делаем скриншот
+        makeScreenshotFullPage();
+
+        // Обновляем страницу
+        driver.navigate().refresh();
 
         // Наводим курсор на ссылку Бытовая техника
-        WebElement technique = driver.findElement(By.xpath("//a[text()='Бытовая техника']"));
+        wait.until(ExpectedConditions.visibilityOf(driver.findElement(By.xpath("//a[text()='Бытовая техника']"))));
+        WebElement linkTechnique = driver.findElement(By.xpath("//a[text()='Бытовая техника']"));
         Actions actions = new Actions(driver);
-        actions.moveToElement(technique);
-        actions.perform();
+        actions.moveToElement(linkTechnique)
+                .perform();
+
+        // Проверка загрузки страницы (проверка наличия элемента страницы в DOM)
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[@class='footer__main']")));
+        // Делаем скриншот
+        makeScreenshotFullPage();
 
         // Получаем список ссылок
+        wait.until(ExpectedConditions.visibilityOfAllElements(driver.findElements(By.xpath("//a[@class ='ui-link menu-desktop__first-level']"))));
         List<WebElement> listTechniqueCategories = driver.findElements(By.xpath("//a[@class ='ui-link menu-desktop__first-level']"));
         List<String> listTechniqueCategoriesNames = new ArrayList<>();
         for (WebElement element : listTechniqueCategories) {
@@ -135,12 +194,18 @@ public class CaseTest {
         logger.info("Проверка на отображение ссылок в разделе Бытовая техника прошла!");
 
         // Наводим курсор на ссылку Приготовление пищи
-        WebElement elementFoodPreparation  = driver.findElement(By.xpath("//*[text() ='Приготовление пищи']"));
-        Actions actionsFoodPreparation = new Actions(driver);
-        actionsFoodPreparation.moveToElement(elementFoodPreparation);
-        actionsFoodPreparation.perform();
+        wait.until(ExpectedConditions.visibilityOf(driver.findElement(By.xpath("//*[text() ='Приготовление пищи']"))));
+        WebElement linkFoodPreparation  = driver.findElement(By.xpath("//*[text() ='Приготовление пищи']"));
+        actions.moveToElement(linkFoodPreparation)
+                .perform();
+
+        // Проверка загрузки страницы (проверка наличия элемента страницы в DOM)
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[@class='footer__main']")));
+        // Делаем скриншот
+        makeScreenshotFullPage();
 
         // Получаем список веб элементов из раздела Приготовление пищи
+        wait.until(ExpectedConditions.visibilityOfAllElements(driver.findElements(By.xpath("//a[@class ='ui-link menu-desktop__popup-link']"))));
         List<WebElement> listFoodPreparationCategories = driver.findElements(By.xpath("//a[@class ='ui-link menu-desktop__popup-link']"));
 
         // Список пишем в логи
@@ -154,27 +219,54 @@ public class CaseTest {
         logger.info("Проверка на количество категорий раздела Приготовление пищи  - пройдена!");
 
         // Наводим курсор на плиты (stove) и кликаем
-        WebElement stove = driver.findElement(By.xpath("//*[text()='Плиты']"));
-        Actions actionsStove = new Actions(driver);
-        actionsStove
-                .moveToElement(stove)
+        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//*[text()='Плиты']")));
+        WebElement linkStove = driver.findElement(By.xpath("//*[text()='Плиты']"));
+        actions.moveToElement(linkStove)
                 .click()
                 .perform();
 
+        // Проверка загрузки страницы (проверка наличия элемента страницы в DOM)
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[@class='footer__main']")));
+        // Делаем скриншот
+        makeScreenshotFullPage();
+
         // Переходим по ссылке Плиты электрические
-        WebElement elektrikStove = driver.findElement(By.xpath("//span[text()='Плиты электрические']"));
-        elektrikStove.click();
+        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[text()='Плиты электрические']")));
+        WebElement linkElektrikStove = driver.findElement(By.xpath("//span[text()='Плиты электрические']"));
+        linkElektrikStove.click();
+
+        // Проверка загрузки страницы (проверка наличия элемента страницы в DOM)
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[@class='footer__main']")));
+        // Делаем скриншот
+        makeScreenshotFullPage();
 
         // Находим веб элемент содержащий количество найденного товара
-        WebElement productsCount = driver.findElement(By.xpath("//span[@class='products-count']"));
+        wait.until(ExpectedConditions.visibilityOf(driver.findElement(By.xpath("//span[@class='products-count']"))));
+        WebElement textProductsCount = driver.findElement(By.xpath("//span[@class='products-count']"));
 
         //получаем строковое значение и из него извлекаем число
-        String s = productsCount.getText();
+        String s = textProductsCount.getText();
         String[] words = s.split("\\s");
         int count = Integer.parseInt(words[0]);
 
         // Проводим проверку на соответствие на количества товара
         Assertions.assertTrue(count > 100, "Количество товара в разделе Плиты электрические меньше или равно 100.");
         logger.info("Проверка на количество товара в разделе Плиты электрические - пройдена!");
+    }
+
+    // Метод скриншотирования всей веб страницы.
+    private void makeScreenshotFullPage() {
+        try {
+
+            Screenshot screenshot = new AShot()
+                    .shootingStrategy(ShootingStrategies.viewportPasting(100))
+                    .takeScreenshot(driver);
+            ImageIO.write(screenshot.getImage(), "png", new File("temp\\ScreenshotFromCaseHW01"+count+".png"));
+            logger.info("Скриншот сохранен.");
+            count++;
+            ((JavascriptExecutor) driver).executeScript("window.scrollTo(0, document.head.scrollHeight)");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
